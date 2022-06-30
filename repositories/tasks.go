@@ -8,7 +8,7 @@ import (
 
 type Repository interface {
 	GetTaskById(id uuid.UUID) (models.Task, error)
-	CreateTask(t models.Task, workerId string) (models.Task, error)
+	CreateTask(t models.Task) (models.Task, error)
 	ListTasks(filters map[string]interface{}) ([]models.Task, error)
 	DeleteTask(id uuid.UUID) error
 }
@@ -24,11 +24,22 @@ func NewTasksRepository(db *gorm.DB) *TaskRepository {
 }
 
 func (r TaskRepository) GetTaskById(id uuid.UUID) (models.Task, error) {
-	return models.Task{}, nil
+	var task models.Task
+
+	if err := r.db.First(&task, id).Error; err != nil {
+		return models.Task{}, err
+	}
+
+	return task, nil
 }
 
-func (r TaskRepository) CreateTask(t models.Task, workerId string) (models.Task, error) {
-	return models.Task{}, nil
+func (r TaskRepository) CreateTask(t models.Task) (models.Task, error) {
+
+	if err := r.db.Create(&t).Error; err != nil {
+		return models.Task{}, err
+	}
+
+	return t, nil
 }
 
 func (r TaskRepository) ListTasks(filters map[string]interface{}) ([]models.Task, error) {
@@ -36,5 +47,15 @@ func (r TaskRepository) ListTasks(filters map[string]interface{}) ([]models.Task
 }
 
 func (r TaskRepository) DeleteTask(id uuid.UUID) error {
+
+	tx := r.db.Delete(&models.Task{}, id)
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	if tx.RowsAffected <= 0 {
+		return gorm.ErrRecordNotFound
+	}
+
 	return nil
 }

@@ -101,3 +101,19 @@ func HasRole(c echo.Context, permittedRole string) bool {
 func IsManager(c echo.Context) bool {
 	return HasRole(c, "manager")
 }
+
+func GetUserNickname(c echo.Context) string {
+
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	nickname := claims["http://supervisorapi/nickname"].(string)
+	return nickname
+}
+
+func GetUserId(c echo.Context) string {
+
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["sub"].(string)
+	return userId
+}

@@ -16,13 +16,19 @@ type TaskRequest struct {
 func (tr *TaskRequest) ToTask(workerId string) (Task, error) {
 
 	t, err := time.Parse(
-		time.RFC3339,
+		"2006-01-02 03:04:05PM",
 		tr.Date)
 	if err != nil {
-		return Task{}, errors.New("invalid date format, use yyyy-mm-ddThh:mm:ss as per rfc3339")
+		return Task{}, errors.New("invalid date format, use yyyy-mm-dd hh:mm:ssPM")
+	}
+
+	genUuid, err := uuid.NewV4()
+	if err != nil {
+		return Task{}, errors.New("Task Id generation error")
 	}
 
 	return Task{
+		Id:       genUuid,
 		Summary:  tr.Summary,
 		WorkerId: workerId,
 		Date: sql.NullTime{
@@ -30,6 +36,15 @@ func (tr *TaskRequest) ToTask(workerId string) (Task, error) {
 			Time:  t,
 		},
 	}, nil
+}
+
+func (tr *TaskRequest) Validate() error {
+
+	// validate date
+
+	// validate number of charecters of summary?
+
+	return nil
 }
 
 type TaskResponse struct {

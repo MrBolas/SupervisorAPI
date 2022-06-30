@@ -7,7 +7,7 @@ import (
 )
 
 type Task struct {
-	Id       uuid.UUID    `gorm:"primary_key;"`
+	Id       uuid.UUID    `gorm:"primary_key;default:UUID()"`
 	WorkerId string       `gorm:"column:workerId"`
 	Summary  string       `gorm:"column:summary"`
 	Date     sql.NullTime `gorm:"column:date"`
