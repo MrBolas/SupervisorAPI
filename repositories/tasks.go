@@ -8,7 +8,7 @@ import (
 
 type Repository interface {
 	GetTaskById(id uuid.UUID) (models.Task, error)
-	CreateTask(t models.Task) (models.Task, error)
+	CreateTask(t models.Task, workerId string) (models.Task, error)
 	ListTasks(filters map[string]interface{}) ([]models.Task, error)
 	DeleteTask(id uuid.UUID) error
 }

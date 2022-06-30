@@ -10,7 +10,9 @@ type TasksHandler struct {
 }
 
 func NewTasksHandler(repo repositories.Repository) *TasksHandler {
-	return nil
+	return &TasksHandler{
+		repo: repo,
+	}
 }
 
 func (th *TasksHandler) GetTaskById(c echo.Context) error {

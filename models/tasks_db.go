@@ -15,8 +15,9 @@ type Task struct {
 
 func (t *Task) ToResponse() TaskResponse {
 	return TaskResponse{
-		Id:      t.Id,
-		Summary: t.Summary,
-		Date:    t.Date.Time.String(),
+		Id:       t.Id,
+		WorkerId: t.WorkerId,
+		Summary:  t.Summary,
+		Date:     t.Date.Time.String(),
 	}
 }

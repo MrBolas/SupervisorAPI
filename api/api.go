@@ -1,6 +1,9 @@
 package api
 
 import (
+	"github.com/MrBolas/SupervisorAPI/handlers"
+	"github.com/MrBolas/SupervisorAPI/models"
+	"github.com/MrBolas/SupervisorAPI/repositories"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -11,7 +14,7 @@ type Api struct {
 
 func New(db *gorm.DB) *Api {
 
-	err := db.AutoMigrate()
+	err := db.AutoMigrate(models.Task{})
 	if err != nil {
 		panic(err)
 	}
@@ -25,17 +28,19 @@ func New(db *gorm.DB) *Api {
 	e := echo.New()
 
 	// repositories
+	tasksRepo := repositories.NewTasksRepository(db)
 
 	// handlers
+	tasksHandler := handlers.NewTasksHandler(tasksRepo)
 
 	// auth
 
 	g := e.Group("/v1")
 
-	g.POST("/tasks", echo.NotFoundHandler)
-	g.GET("/tasks", echo.NotFoundHandler)
-	g.GET("/tasks/:id", echo.NotFoundHandler)
-	g.DELETE("/tasks/:id", echo.NotFoundHandler)
+	g.POST("/tasks", tasksHandler.CreateTask)
+	g.GET("/tasks", tasksHandler.GetTaskList)
+	g.GET("/tasks/:id", tasksHandler.GetTaskById)
+	g.DELETE("/tasks/:id", tasksHandler.DeleteTask)
 
 	return &Api{
 		echo: e,

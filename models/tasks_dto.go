@@ -13,7 +13,7 @@ type TaskRequest struct {
 	Date    string `json:"date"`
 }
 
-func (tr *TaskRequest) ToTask() (Task, error) {
+func (tr *TaskRequest) ToTask(workerId string) (Task, error) {
 
 	t, err := time.Parse(
 		time.RFC3339,
@@ -23,7 +23,8 @@ func (tr *TaskRequest) ToTask() (Task, error) {
 	}
 
 	return Task{
-		Summary: tr.Summary,
+		Summary:  tr.Summary,
+		WorkerId: workerId,
 		Date: sql.NullTime{
 			Valid: true,
 			Time:  t,
