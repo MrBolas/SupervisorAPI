@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/MrBolas/SupervisorAPI/auth"
 	"github.com/MrBolas/SupervisorAPI/repositories"
 	"github.com/labstack/echo/v4"
 )
@@ -16,6 +17,10 @@ func NewTasksHandler(repo repositories.Repository) *TasksHandler {
 }
 
 func (th *TasksHandler) GetTaskById(c echo.Context) error {
+
+	if !auth.IsManager(c) {
+
+	}
 	return nil
 }
 
