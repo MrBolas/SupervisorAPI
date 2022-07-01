@@ -9,6 +9,7 @@ import (
 type Repository interface {
 	GetTaskById(id uuid.UUID) (models.Task, error)
 	CreateTask(t models.Task) (models.Task, error)
+	UpdateTask(id uuid.UUID, oldTask models.Task, newTask models.Task) (models.Task, error)
 	ListTasks(filters ListQuery) ([]models.Task, error)
 	DeleteTask(id uuid.UUID) error
 }
@@ -57,6 +58,17 @@ func (r TaskRepository) ListTasks(query ListQuery) ([]models.Task, error) {
 	}
 
 	return tasks, nil
+}
+
+func (r TaskRepository) UpdateTask(id uuid.UUID, oldTask models.Task, newTask models.Task) (models.Task, error) {
+
+	newTask.Id = id
+
+	if err := r.db.Save(&newTask).Error; err != nil {
+		return models.Task{}, err
+	}
+
+	return newTask, nil
 }
 
 func (r TaskRepository) DeleteTask(id uuid.UUID) error {

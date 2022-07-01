@@ -52,6 +52,7 @@ func New(db *gorm.DB) *Api {
 	g.POST("/tasks", tasksHandler.CreateTask)
 	g.GET("/tasks", tasksHandler.GetTaskList)
 	g.GET("/tasks/:id", tasksHandler.GetTaskById)
+	g.PUT("/tasks/:id", tasksHandler.UpdateTask)
 	g.DELETE("/tasks/:id", tasksHandler.DeleteTask)
 
 	return &Api{

@@ -142,3 +142,49 @@ func (th *TasksHandler) DeleteTask(c echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
+
+func (th *TasksHandler) UpdateTask(c echo.Context) error {
+
+	id, err := uuid.FromString(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, "invalid id")
+	}
+
+	existingTask, err := th.repo.GetTaskById(id)
+	if err == gorm.ErrRecordNotFound {
+		return c.JSON(http.StatusNotFound, "Not found")
+	}
+	if err != nil {
+		return err
+	}
+
+	req := new(models.TaskRequest)
+	err = c.Bind(req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Malformed request")
+	}
+
+	err = req.Validate()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	if auth.GetUserNickname(c) != existingTask.WorkerId {
+		return c.JSON(http.StatusUnauthorized, "Unauthorized")
+	}
+
+	newTask, err := req.ToTask(existingTask.WorkerId)
+	if err != nil {
+		return err
+	}
+
+	task, err := th.repo.UpdateTask(id, existingTask, newTask)
+	if err == gorm.ErrRegistered {
+		return c.JSON(http.StatusConflict, err)
+	}
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, task.ToResponse())
+}
