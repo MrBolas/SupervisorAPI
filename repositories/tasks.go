@@ -51,6 +51,14 @@ func (r TaskRepository) ListTasks(query ListQuery) ([]models.Task, error) {
 
 	q := r.db.Where(query.Filters)
 
+	if query.IntervalFilters["before"] != nil {
+		q.Where("date < ?", query.IntervalFilters["before"])
+	}
+
+	if query.IntervalFilters["after"] != nil {
+		q.Where("date > ?", query.IntervalFilters["after"])
+	}
+
 	q.Order(query.Sort.By + " " + query.Sort.Order)
 
 	if err := q.Offset(offset).Limit(limit).Find(&tasks).Error; err != nil {

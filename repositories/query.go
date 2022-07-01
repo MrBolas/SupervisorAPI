@@ -12,9 +12,10 @@ const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 40
 
 type ListQuery struct {
-	Filters    map[string]interface{}
-	Sort       Sort
-	Pagination Pagination
+	Filters         map[string]interface{}
+	IntervalFilters map[string]interface{}
+	Sort            Sort
+	Pagination      Pagination
 }
 
 type Sort struct {
@@ -29,7 +30,8 @@ type Pagination struct {
 
 func NewListQuery() ListQuery {
 	return ListQuery{
-		Filters: make(map[string]interface{}),
+		Filters:         make(map[string]interface{}),
+		IntervalFilters: make(map[string]interface{}),
 		Sort: Sort{
 			By:    "",
 			Order: "",
@@ -58,12 +60,12 @@ func (lq *ListQuery) AddListTaskFilters(queryParamaters url.Values, isManager bo
 
 		// validate date
 		if key == "before" {
-			lq.Filters["before"] = val[0]
+			lq.IntervalFilters["before"] = val[0]
 		}
 
 		// validate date
 		if key == "after" {
-			lq.Filters["after"] = val[0]
+			lq.IntervalFilters["after"] = val[0]
 		}
 	}
 
