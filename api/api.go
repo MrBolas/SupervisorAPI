@@ -17,6 +17,7 @@ type Api struct {
 }
 
 const ENV_PUBLIC_KEY_URL = "AUTH0_PUBLIC_KEY_URL"
+const ENV_CRYPTO_KEY = "CRYPTO_KEY"
 
 func New(db *gorm.DB) *Api {
 
@@ -27,11 +28,18 @@ func New(db *gorm.DB) *Api {
 
 	e := echo.New()
 
+	// encryption
+	cryptKey := os.Getenv(ENV_CRYPTO_KEY)
+	if cryptKey == "" {
+		panic("missing env var: " + ENV_CRYPTO_KEY)
+	}
+	ce := handlers.NewCryptoEngine(cryptKey)
+
 	// repositories
 	tasksRepo := repositories.NewTasksRepository(db)
 
 	// handlers
-	tasksHandler := handlers.NewTasksHandler(tasksRepo)
+	tasksHandler := handlers.NewTasksHandler(tasksRepo, ce)
 
 	// auth
 	publicKeyUrl := os.Getenv(ENV_PUBLIC_KEY_URL)

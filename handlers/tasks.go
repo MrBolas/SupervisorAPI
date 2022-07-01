@@ -15,11 +15,13 @@ import (
 
 type TasksHandler struct {
 	repo repositories.Repository
+	ce   CryptoEngine
 }
 
-func NewTasksHandler(repo repositories.Repository) *TasksHandler {
+func NewTasksHandler(repo repositories.Repository, ce CryptoEngine) *TasksHandler {
 	return &TasksHandler{
 		repo: repo,
+		ce:   ce,
 	}
 }
 
@@ -39,9 +41,12 @@ func (th *TasksHandler) GetTaskById(c echo.Context) error {
 	}
 
 	// If User does not have manager Role or owns task is unAuthorized
-	if !auth.IsManager(c) && auth.GetUserId(c) != task.WorkerId {
+	if !auth.IsManager(c) && auth.GetUserNickname(c) != task.WorkerId {
 		return c.JSON(http.StatusUnauthorized, "Unauthorized")
 	}
+
+	// Descrypt Summary
+	task.Summary = th.ce.Decrypt(task.Summary)
 
 	return c.JSON(http.StatusOK, task.ToResponse())
 }
@@ -80,7 +85,19 @@ func (th *TasksHandler) GetTaskList(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, models.ToListResponse(tasks, query.Pagination.Page, query.Pagination.PageSize))
+	var decryptedTaskList = make([]models.Task, 0)
+
+	// Descrypt Summary
+	for _, task := range tasks {
+		decryptedTaskList = append(decryptedTaskList, models.Task{
+			Id:       task.Id,
+			WorkerId: task.WorkerId,
+			Summary:  th.ce.Decrypt(task.Summary),
+			Date:     task.Date,
+		})
+	}
+
+	return c.JSON(http.StatusOK, models.ToListResponse(decryptedTaskList, query.Pagination.Page, query.Pagination.PageSize))
 }
 
 func (th *TasksHandler) CreateTask(c echo.Context) error {
@@ -100,6 +117,9 @@ func (th *TasksHandler) CreateTask(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Encrypt Summary
+	task.Summary = th.ce.Encrypt(task.Summary)
 
 	task, err = th.repo.CreateTask(task)
 	if err == gorm.ErrRegistered {
@@ -177,6 +197,9 @@ func (th *TasksHandler) UpdateTask(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Encrypt Summary
+	newTask.Summary = th.ce.Encrypt(newTask.Summary)
 
 	task, err := th.repo.UpdateTask(id, existingTask, newTask)
 	if err == gorm.ErrRegistered {
