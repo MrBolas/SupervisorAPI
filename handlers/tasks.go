@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/MrBolas/SupervisorAPI/auth"
+	"github.com/MrBolas/SupervisorAPI/encryption"
 	"github.com/MrBolas/SupervisorAPI/models"
 	"github.com/MrBolas/SupervisorAPI/repositories"
 	"github.com/labstack/echo/v4"
@@ -15,10 +16,10 @@ import (
 
 type TasksHandler struct {
 	repo repositories.Repository
-	ce   CryptoEngine
+	ce   encryption.CryptoEngine
 }
 
-func NewTasksHandler(repo repositories.Repository, ce CryptoEngine) *TasksHandler {
+func NewTasksHandler(repo repositories.Repository, ce encryption.CryptoEngine) *TasksHandler {
 	return &TasksHandler{
 		repo: repo,
 		ce:   ce,

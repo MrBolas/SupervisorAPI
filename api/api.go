@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/MrBolas/SupervisorAPI/auth"
+	"github.com/MrBolas/SupervisorAPI/encryption"
 	"github.com/MrBolas/SupervisorAPI/handlers"
 	"github.com/MrBolas/SupervisorAPI/models"
 	"github.com/MrBolas/SupervisorAPI/repositories"
@@ -33,7 +34,7 @@ func New(db *gorm.DB) *Api {
 	if cryptKey == "" {
 		panic("missing env var: " + ENV_CRYPTO_KEY)
 	}
-	ce := handlers.NewCryptoEngine(cryptKey)
+	ce := encryption.NewCryptoEngine(cryptKey)
 
 	// repositories
 	tasksRepo := repositories.NewTasksRepository(db)
