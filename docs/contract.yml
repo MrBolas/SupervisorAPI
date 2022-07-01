@@ -1,0 +1,189 @@
+openapi: 3.0.1
+info:
+  title: Supervisor API
+  description: Service to manage tasks
+  version: 1.0.0
+tags:
+  - name: Tasks
+    description: Operations affecting tasks
+paths:
+  '/v1/tasks':
+    get:
+      parameters:
+        - in: query
+          name: worker_name
+          schema:
+            type: string
+          description: Worker Name
+        - in: query
+          name: before
+          schema:
+            type: string
+          description: Before date
+        - in: query
+          name: after
+          schema:
+            type: string
+          description: After date
+        - in: query
+          name: page
+          schema:
+            type: string
+          description: Target page
+        - in: query
+          name: page_size
+          schema:
+            type: string
+          description: Number of tasks per page
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+          description: Property to be sorted by
+        - in: query
+          name: sort_order
+          schema:
+            type: string
+          description: Order to be sorted "asc" or "desc"
+      tags:
+        - Tasks
+      operationId: getAllTasks
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+
+    post:
+      tags:
+        - Tasks
+      operationId: createNewTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '409':
+          description: Conflict
+
+  '/v1/task/{task-id}':
+    parameters:
+      - in: path
+        name: task-id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Tasks
+      operationId: getTask
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+
+    put:
+      tags:
+        - Tasks
+      operationId: updateTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+        '409':
+          description: Conflict
+
+    delete:
+      tags:
+        - Tasks
+      operationId: deleteTask
+      responses:
+        '204':
+          description: deleted
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+        '409':
+          description: Conflict
+
+components:
+  schemas:
+    TaskRequest:
+      type: object
+      properties:
+        summary:
+          type: string
+        date:
+          type: string
+
+
+    TaskResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        worker_name:
+          type: string
+        summary:
+          type: string
+        date:
+          type: string
+
+    TaskListResponse:
+      type: object
+      properties:
+        data: 
+          type: array
+          items: 
+            $ref: '#/components/schemas/TaskResponse'
+        metadata:
+          $ref: '#/components/schemas/metadata'
+
+    metadata:
+      type: object
+      properties:
+        page:
+          type: number
+        page_size:
+          type: number
