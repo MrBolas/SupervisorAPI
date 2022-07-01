@@ -9,7 +9,7 @@ import (
 type Repository interface {
 	GetTaskById(id uuid.UUID) (models.Task, error)
 	CreateTask(t models.Task) (models.Task, error)
-	ListTasks(filters map[string]interface{}) ([]models.Task, error)
+	ListTasks(filters ListQuery) ([]models.Task, error)
 	DeleteTask(id uuid.UUID) error
 }
 
@@ -42,8 +42,21 @@ func (r TaskRepository) CreateTask(t models.Task) (models.Task, error) {
 	return t, nil
 }
 
-func (r TaskRepository) ListTasks(filters map[string]interface{}) ([]models.Task, error) {
-	return []models.Task{}, nil
+func (r TaskRepository) ListTasks(query ListQuery) ([]models.Task, error) {
+
+	offset, limit := query.GetOffsetLimit()
+
+	var tasks []models.Task
+
+	q := r.db.Where(query.Filters)
+
+	q.Order(query.Sort.By + " " + query.Sort.Order)
+
+	if err := q.Offset(offset).Limit(limit).Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
 }
 
 func (r TaskRepository) DeleteTask(id uuid.UUID) error {

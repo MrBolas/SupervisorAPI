@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/MrBolas/SupervisorAPI/auth"
@@ -46,7 +47,40 @@ func (th *TasksHandler) GetTaskById(c echo.Context) error {
 }
 
 func (th *TasksHandler) GetTaskList(c echo.Context) error {
-	return nil
+
+	query := repositories.NewListQuery()
+	isManager := auth.IsManager(c)
+
+	// auth
+	if !isManager {
+		query.Filters["worker_name"] = auth.GetUserNickname(c)
+	}
+
+	// pagination
+	err := query.AddPageAndPageSize(c.QueryParam("page"), c.QueryParam("page_size"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	// sorting
+	err = query.AddSorting(c.QueryParam("sort_by"), c.QueryParam("sort_order"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	// create filters
+	err = query.AddListTaskFilters(c.QueryParams(), isManager)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	// Call to repository
+	tasks, err := th.repo.ListTasks(query)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, models.ToListResponse(tasks, query.Pagination.Page, query.Pagination.PageSize))
 }
 
 func (th *TasksHandler) CreateTask(c echo.Context) error {
@@ -62,9 +96,9 @@ func (th *TasksHandler) CreateTask(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	task, err := req.ToTask(auth.GetUserId(c))
+	task, err := req.ToTask(auth.GetUserNickname(c))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return err
 	}
 
 	task, err = th.repo.CreateTask(task)
@@ -74,6 +108,9 @@ func (th *TasksHandler) CreateTask(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Add task to Queue
+	log.Println("The tech", task.WorkerId, "performed the task", task.Id.String(), "on date", task.Date.Time.String())
 
 	return c.JSON(http.StatusCreated, task.ToResponse())
 }
