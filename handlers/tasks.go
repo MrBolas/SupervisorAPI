@@ -124,7 +124,7 @@ func (th *TasksHandler) CreateTask(c echo.Context) error {
 
 	task, err = th.repo.CreateTask(task)
 	if err == gorm.ErrRegistered {
-		return c.JSON(http.StatusConflict, err)
+		return c.JSON(http.StatusConflict, "conflict creating task")
 	}
 	if err != nil {
 		return err
