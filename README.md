@@ -35,7 +35,12 @@ Existing roles and allowed actions are differentiated by access control:
 
     ## Features
     (needs work)
-    []
+    [x] Task summary is constraint to 2500 characters
+    [x] Task summary is encrypted on database
+    [x] Task List endpoints query by "worker_name"
+    [x] Task List endpoints query by date "after"
+    [x] Task List endpoints query by date "before"
+    [ ] Use message broker 
 
 # Requirements
 1. Docker Destop running
@@ -104,3 +109,4 @@ go build
 (needs work)
 
 # Testing and Coverage
+(needs work)
