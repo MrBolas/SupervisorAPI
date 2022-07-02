@@ -330,3 +330,212 @@ func TestGetTaskListShould200OKListingFilteredTasks(t *testing.T) {
 		assert.Equal(t, string(u)+"\n", rec.Body.String())
 	}
 }
+
+func TestGetTaskListShould400BadRequestWhenPageNumberIsLessThan1(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/tenants", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	claims := make(map[string]string, 0)
+	claims["http://supervisorapi/role"] = "manager"
+	claims["http://supervisorapi/nickname"] = "mocked_worker_id"
+	addClaimsToJWTContext(c, claims)
+
+	c.SetPath("/tasks")
+	c.QueryParams().Add("page", "0")
+
+	taskList := []models.Task{mockedTask, mockedTask, mockedTask}
+
+	mr := mockRepo{}
+	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
+	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
+	h := NewTasksHandler(&mr, ce)
+
+	// Assertions
+	if assert.NoError(t, h.GetTaskList(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Equal(t, "\"page must be bigger than 0\"\n", rec.Body.String())
+	}
+}
+
+func TestGetTaskListShould400BadRequestWhenPageSizeNumberIsLessThan1(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/tenants", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	claims := make(map[string]string, 0)
+	claims["http://supervisorapi/role"] = "manager"
+	claims["http://supervisorapi/nickname"] = "mocked_worker_id"
+	addClaimsToJWTContext(c, claims)
+
+	c.SetPath("/tasks")
+	c.QueryParams().Add("page", "1")
+	c.QueryParams().Add("page_size", "0")
+
+	taskList := []models.Task{mockedTask, mockedTask, mockedTask}
+
+	mr := mockRepo{}
+	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
+	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
+	h := NewTasksHandler(&mr, ce)
+
+	// Assertions
+	if assert.NoError(t, h.GetTaskList(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Equal(t, "\"page_size must be bigger than 0\"\n", rec.Body.String())
+	}
+}
+
+func TestGetTaskListShould400BadRequestWhenPageSizeNumberIsMoreThan40(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/tenants", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	claims := make(map[string]string, 0)
+	claims["http://supervisorapi/role"] = "manager"
+	claims["http://supervisorapi/nickname"] = "mocked_worker_id"
+	addClaimsToJWTContext(c, claims)
+
+	c.SetPath("/tasks")
+	c.QueryParams().Add("page", "1")
+	c.QueryParams().Add("page_size", "41")
+
+	taskList := []models.Task{mockedTask, mockedTask, mockedTask}
+
+	mr := mockRepo{}
+	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
+	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
+	h := NewTasksHandler(&mr, ce)
+
+	// Assertions
+	if assert.NoError(t, h.GetTaskList(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Equal(t, "\"page_size must be less or equal than 40\"\n", rec.Body.String())
+	}
+}
+
+func TestUpdateTaskShould200OK(t *testing.T) {
+	e := echo.New()
+	u, err := json.Marshal(mockedTaskRequest)
+	assert.Nil(t, err)
+	req := httptest.NewRequest(http.MethodPut, "/tasks/a2d45497-09b4-4da1-a0d0-173d0bd12f13", strings.NewReader(string(u)))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	claims := make(map[string]string, 0)
+	claims["http://supervisorapi/role"] = "manager"
+	claims["http://supervisorapi/nickname"] = "mocked_worker_id"
+	addClaimsToJWTContext(c, claims)
+
+	c.SetPath("/tasks/:id")
+	c.SetParamNames("id")
+	c.SetParamValues("a2d45497-09b4-4da1-a0d0-173d0bd12f13")
+
+	mr := mockRepo{}
+	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
+
+	updatedMockedTask := mockedTask
+	updatedMockedTask.Summary = ce.Encrypt("updated mock summary")
+
+	mr.On("GetTaskById", mock.Anything).Return(mockedTask, nil)
+	mr.On("UpdateTask", updatedMockedTask.Id, mock.Anything).Return(updatedMockedTask, nil)
+	h := NewTasksHandler(&mr, ce)
+
+	u, err = json.Marshal(updatedMockedTask.ToResponse())
+	assert.Nil(t, err)
+
+	// Assertions
+	if assert.NoError(t, h.UpdateTask(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, string(u)+"\n", rec.Body.String())
+	}
+}
+
+func TestUpdateTaskShould404NotFoundWhenTaskDoesNotExist(t *testing.T) {
+	e := echo.New()
+	u, err := json.Marshal(mockedTaskRequest)
+	assert.Nil(t, err)
+	req := httptest.NewRequest(http.MethodPut, "/tasks/a2d45497-09b4-4da1-a0d0-173d0bd12f13", strings.NewReader(string(u)))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	claims := make(map[string]string, 0)
+	claims["http://supervisorapi/role"] = "manager"
+	claims["http://supervisorapi/nickname"] = "mocked_worker_id"
+	addClaimsToJWTContext(c, claims)
+
+	c.SetPath("/tasks/:id")
+	c.SetParamNames("id")
+	c.SetParamValues("a2d45497-09b4-4da1-a0d0-173d0bd12f13")
+
+	mr := mockRepo{}
+	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
+	mr.On("GetTaskById", mock.Anything).Return(models.Task{}, gorm.ErrRecordNotFound)
+	h := NewTasksHandler(&mr, ce)
+
+	// Assertions
+	if assert.NoError(t, h.UpdateTask(c)) {
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		assert.Equal(t, "\"Not found\"\n", rec.Body.String())
+	}
+}
+
+func TestDeleteTaskShould204NoContent(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodDelete, "/tasks/a2d45497-09b4-4da1-a0d0-173d0bd12f13", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	claims := make(map[string]string, 0)
+	claims["http://supervisorapi/role"] = "manager"
+	claims["http://supervisorapi/nickname"] = "mocked_worker_id"
+	addClaimsToJWTContext(c, claims)
+
+	c.SetPath("/tasks/:id")
+	c.SetParamNames("id")
+	c.SetParamValues("a2d45497-09b4-4da1-a0d0-173d0bd12f13")
+
+	mr := mockRepo{}
+	mr.On("GetTaskById", mock.Anything).Return(mockedTask, nil)
+	mr.On("DeleteTask", mock.Anything).Return(nil)
+	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
+	h := NewTasksHandler(&mr, ce)
+
+	// Assertions
+	if assert.NoError(t, h.DeleteTask(c)) {
+		assert.Equal(t, http.StatusNoContent, rec.Code)
+	}
+}
+
+func TestDeleteTenantShouldReturn404NotFoundWhenItDoesntExist(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodDelete, "/tasks/a2d45497-09b4-4da1-a0d0-173d0bd12f13", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	claims := make(map[string]string, 0)
+	claims["http://supervisorapi/role"] = "manager"
+	claims["http://supervisorapi/nickname"] = "mocked_worker_id"
+	addClaimsToJWTContext(c, claims)
+
+	c.SetPath("/tasks/:id")
+	c.SetParamNames("id")
+	c.SetParamValues("a2d45497-09b4-4da1-a0d0-173d0bd12f13")
+
+	mr := mockRepo{}
+	mr.On("GetTaskById", mock.Anything).Return(models.Task{}, gorm.ErrRecordNotFound)
+	mr.On("DeleteTask", mock.Anything).Return(nil)
+	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
+	h := NewTasksHandler(&mr, ce)
+
+	// Assertions
+	if assert.NoError(t, h.DeleteTask(c)) {
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		assert.Equal(t, "\"Task not found\"\n", rec.Body.String())
+	}
+}

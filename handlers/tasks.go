@@ -65,19 +65,19 @@ func (th *TasksHandler) GetTaskList(c echo.Context) error {
 	// pagination
 	err := query.AddPageAndPageSize(c.QueryParam("page"), c.QueryParam("page_size"))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	// sorting
 	err = query.AddSorting(c.QueryParam("sort_by"), c.QueryParam("sort_order"))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	// create filters
 	err = query.AddListTaskFilters(c.QueryParams(), isManager)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	// Call to repository
