@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose.yaml convert
+    kompose.version: 1.26.1 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: supervisorapi
+  name: supervisorapi
+spec:
+  containers:
+    - env:
+        - name: AUTH0_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              key: AUTH0_CLIENT_ID
+              name: env-docker
+        - name: AUTH0_CLIENT_SECRET
+          valueFrom:
+            configMapKeyRef:
+              key: AUTH0_CLIENT_SECRET
+              name: env-docker
+        - name: AUTH0_DOMAIN
+          valueFrom:
+            configMapKeyRef:
+              key: AUTH0_DOMAIN
+              name: env-docker
+        - name: AUTH0_PUBLIC_KEY_URL
+          valueFrom:
+            configMapKeyRef:
+              key: AUTH0_PUBLIC_KEY_URL
+              name: env-docker
+        - name: CRYPTO_KEY
+          valueFrom:
+            configMapKeyRef:
+              key: CRYPTO_KEY
+              name: env-docker
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: MYSQL_DATABASE
+              name: env-docker
+        - name: MYSQL_HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              key: MYSQL_HOSTNAME
+              name: env-docker
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: MYSQL_PASSWORD
+              name: env-docker
+        - name: MYSQL_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: MYSQL_PORT
+              name: env-docker
+        - name: MYSQL_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: MYSQL_USERNAME
+              name: env-docker
+        - name: REDIS_DB
+          valueFrom:
+            configMapKeyRef:
+              key: REDIS_DB
+              name: env-docker
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: REDIS_HOST
+              name: env-docker
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: REDIS_PORT
+              name: env-docker
+      image: mrbolas/supervisorapi:0.1.0
+      name: supervisorapi
+      ports:
+        - containerPort: 8080
+      resources: {}
+  restartPolicy: OnFailure
+status: {}

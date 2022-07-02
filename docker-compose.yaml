@@ -1,8 +1,9 @@
+version: '3'
 services:
   supervisorapi:
     build:
       context: .
-    image: mrbolas/supervisorapi:latest
+    image: mrbolas/supervisorapi:0.1.0
     ports:
       - "8080:8080" # http
     env_file:
