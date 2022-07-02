@@ -6,16 +6,14 @@ services:
     ports:
       - "8080:8080" # http
     env_file:
-      - .env
+      - .env-docker
     depends_on:
       - db
+      - queue
     restart: on-failure
 
   db:
     image: mysql:5.7
-    build:
-      context: .
-      dockerfile: docker/db/Dockerfile
     ports:
       - "3306:3306"
     environment:
@@ -26,6 +24,12 @@ services:
     volumes:
       - db-data:/var/lib/mysql
     restart: unless-stopped
+
+  queue:
+    image: redis
+    restart: always
+    ports:
+      - '6379:6379'
 
 volumes:
  db-data:

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/MrBolas/SupervisorAPI/encryption"
 	"github.com/MrBolas/SupervisorAPI/models"
 	"github.com/MrBolas/SupervisorAPI/repositories"
+	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
@@ -15,14 +17,16 @@ import (
 )
 
 type TasksHandler struct {
-	repo repositories.Repository
-	ce   encryption.CryptoEngine
+	repo    repositories.Repository
+	ce      encryption.CryptoEngine
+	rclient *redis.Client
 }
 
-func NewTasksHandler(repo repositories.Repository, ce encryption.CryptoEngine) *TasksHandler {
+func NewTasksHandler(repo repositories.Repository, ce encryption.CryptoEngine, rclient *redis.Client) *TasksHandler {
 	return &TasksHandler{
-		repo: repo,
-		ce:   ce,
+		repo:    repo,
+		ce:      ce,
+		rclient: rclient,
 	}
 }
 
@@ -131,7 +135,9 @@ func (th *TasksHandler) CreateTask(c echo.Context) error {
 	}
 
 	// Add task to Queue
-	log.Println("The tech", task.WorkerId, "performed the task", task.Id.String(), "on date", task.Date.Time.String())
+	msg := fmt.Sprintf("The tech %s performed the task %s on date %s ", task.WorkerId, task.Id.String(), task.Date.Time.String())
+	log.Println(msg)
+	th.rclient.Publish(c.Request().Context(), "notifications", msg)
 
 	return c.JSON(http.StatusCreated, task.ToResponse())
 }

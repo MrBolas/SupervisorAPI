@@ -8,6 +8,7 @@ import (
 	"github.com/MrBolas/SupervisorAPI/handlers"
 	"github.com/MrBolas/SupervisorAPI/models"
 	"github.com/MrBolas/SupervisorAPI/repositories"
+	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/gorm"
@@ -20,7 +21,7 @@ type Api struct {
 const ENV_PUBLIC_KEY_URL = "AUTH0_PUBLIC_KEY_URL"
 const ENV_CRYPTO_KEY = "CRYPTO_KEY"
 
-func New(db *gorm.DB) *Api {
+func New(db *gorm.DB, redis *redis.Client) *Api {
 
 	err := db.AutoMigrate(models.Task{})
 	if err != nil {
@@ -40,7 +41,7 @@ func New(db *gorm.DB) *Api {
 	tasksRepo := repositories.NewTasksRepository(db)
 
 	// handlers
-	tasksHandler := handlers.NewTasksHandler(tasksRepo, ce)
+	tasksHandler := handlers.NewTasksHandler(tasksRepo, ce, redis)
 
 	// auth
 	publicKeyUrl := os.Getenv(ENV_PUBLIC_KEY_URL)

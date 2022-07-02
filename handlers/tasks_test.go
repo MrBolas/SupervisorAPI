@@ -123,7 +123,7 @@ func TestGetTaskByIdShould200OK(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("GetTaskById", mock.Anything).Return(mockedTask, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	taskResponse := mockedTask.ToResponse()
 	taskResponse.Summary = ce.Decrypt(taskResponse.Summary)
@@ -154,7 +154,7 @@ func TestGetTaskByIdShould404NotFoundWhenDoesntExist(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("GetTaskById", mock.Anything).Return(models.Task{}, gorm.ErrRecordNotFound)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	// Assertions
 	if assert.NoError(t, h.GetTaskById(c)) {
@@ -182,7 +182,7 @@ func TestCreateTaskShould201Created(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("CreateTask", mock.Anything).Return(mockedTask, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	mockedTaskResponse := mockedTask.ToResponse()
 	u, err = json.Marshal(mockedTaskResponse)
@@ -217,7 +217,7 @@ func TestCreateTaskShould400BadRequestWhenTimeFormatIsInvalid(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("CreateTask", mock.Anything).Return(mockedTask, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	mockedTaskResponse := mockedTask.ToResponse()
 	u, err = json.Marshal(mockedTaskResponse)
@@ -252,7 +252,7 @@ func TestCreateTaskShould400BadRequestWhenSummaryIsInvalid(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("CreateTask", mock.Anything).Return(mockedTask, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	mockedTaskResponse := mockedTask.ToResponse()
 	u, err = json.Marshal(mockedTaskResponse)
@@ -285,7 +285,7 @@ func TestCreateTaskShould409ConflictWhenTaskAlreadyExists(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("CreateTask", mock.Anything).Return(models.Task{}, gorm.ErrRegistered)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	// Assertions
 	if assert.NoError(t, h.CreateTask(c)) {
@@ -312,7 +312,7 @@ func TestGetTaskListShould200OKListingFilteredTasks(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	decryptedTaskList := []models.Task{}
 	for _, task := range taskList {
@@ -350,7 +350,7 @@ func TestGetTaskListShould400BadRequestWhenPageNumberIsLessThan1(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	// Assertions
 	if assert.NoError(t, h.GetTaskList(c)) {
@@ -379,7 +379,7 @@ func TestGetTaskListShould400BadRequestWhenPageSizeNumberIsLessThan1(t *testing.
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	// Assertions
 	if assert.NoError(t, h.GetTaskList(c)) {
@@ -408,7 +408,7 @@ func TestGetTaskListShould400BadRequestWhenPageSizeNumberIsMoreThan40(t *testing
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	// Assertions
 	if assert.NoError(t, h.GetTaskList(c)) {
@@ -443,7 +443,7 @@ func TestUpdateTaskShould200OK(t *testing.T) {
 
 	mr.On("GetTaskById", mock.Anything).Return(mockedTask, nil)
 	mr.On("UpdateTask", updatedMockedTask.Id, mock.Anything).Return(updatedMockedTask, nil)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	u, err = json.Marshal(updatedMockedTask.ToResponse())
 	assert.Nil(t, err)
@@ -476,7 +476,7 @@ func TestUpdateTaskShould404NotFoundWhenTaskDoesNotExist(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("GetTaskById", mock.Anything).Return(models.Task{}, gorm.ErrRecordNotFound)
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	// Assertions
 	if assert.NoError(t, h.UpdateTask(c)) {
@@ -504,7 +504,7 @@ func TestDeleteTaskShould204NoContent(t *testing.T) {
 	mr.On("GetTaskById", mock.Anything).Return(mockedTask, nil)
 	mr.On("DeleteTask", mock.Anything).Return(nil)
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	// Assertions
 	if assert.NoError(t, h.DeleteTask(c)) {
@@ -531,7 +531,7 @@ func TestDeleteTenantShouldReturn404NotFoundWhenItDoesntExist(t *testing.T) {
 	mr.On("GetTaskById", mock.Anything).Return(models.Task{}, gorm.ErrRecordNotFound)
 	mr.On("DeleteTask", mock.Anything).Return(nil)
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
-	h := NewTasksHandler(&mr, ce)
+	h := NewTasksHandler(&mr, ce, nil)
 
 	// Assertions
 	if assert.NoError(t, h.DeleteTask(c)) {
