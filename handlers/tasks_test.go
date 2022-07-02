@@ -12,6 +12,7 @@ import (
 	"github.com/MrBolas/SupervisorAPI/encryption"
 	"github.com/MrBolas/SupervisorAPI/models"
 	"github.com/MrBolas/SupervisorAPI/repositories"
+	"github.com/go-redis/redis/v8"
 	"github.com/gofrs/uuid"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
@@ -106,6 +107,14 @@ func addClaimsToJWTContext(c echo.Context, mockedClaims map[string]string) {
 	c.Set("user", tk)
 }
 
+func createRedisClient() *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr:     "localhost:6357",
+		Password: "",
+		DB:       0,
+	})
+}
+
 func TestGetTaskByIdShould200OK(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/tasks/a2d45497-09b4-4da1-a0d0-173d0bd12f13", nil)
@@ -123,7 +132,7 @@ func TestGetTaskByIdShould200OK(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("GetTaskById", mock.Anything).Return(mockedTask, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	taskResponse := mockedTask.ToResponse()
 	taskResponse.Summary = ce.Decrypt(taskResponse.Summary)
@@ -154,7 +163,7 @@ func TestGetTaskByIdShould404NotFoundWhenDoesntExist(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("GetTaskById", mock.Anything).Return(models.Task{}, gorm.ErrRecordNotFound)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	// Assertions
 	if assert.NoError(t, h.GetTaskById(c)) {
@@ -182,7 +191,7 @@ func TestCreateTaskShould201Created(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("CreateTask", mock.Anything).Return(mockedTask, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	mockedTaskResponse := mockedTask.ToResponse()
 	u, err = json.Marshal(mockedTaskResponse)
@@ -217,7 +226,7 @@ func TestCreateTaskShould400BadRequestWhenTimeFormatIsInvalid(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("CreateTask", mock.Anything).Return(mockedTask, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	mockedTaskResponse := mockedTask.ToResponse()
 	u, err = json.Marshal(mockedTaskResponse)
@@ -252,7 +261,7 @@ func TestCreateTaskShould400BadRequestWhenSummaryIsInvalid(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("CreateTask", mock.Anything).Return(mockedTask, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	mockedTaskResponse := mockedTask.ToResponse()
 	u, err = json.Marshal(mockedTaskResponse)
@@ -285,7 +294,7 @@ func TestCreateTaskShould409ConflictWhenTaskAlreadyExists(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("CreateTask", mock.Anything).Return(models.Task{}, gorm.ErrRegistered)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	// Assertions
 	if assert.NoError(t, h.CreateTask(c)) {
@@ -312,7 +321,7 @@ func TestGetTaskListShould200OKListingFilteredTasks(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	decryptedTaskList := []models.Task{}
 	for _, task := range taskList {
@@ -350,7 +359,7 @@ func TestGetTaskListShould400BadRequestWhenPageNumberIsLessThan1(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	// Assertions
 	if assert.NoError(t, h.GetTaskList(c)) {
@@ -379,7 +388,7 @@ func TestGetTaskListShould400BadRequestWhenPageSizeNumberIsLessThan1(t *testing.
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	// Assertions
 	if assert.NoError(t, h.GetTaskList(c)) {
@@ -408,7 +417,7 @@ func TestGetTaskListShould400BadRequestWhenPageSizeNumberIsMoreThan40(t *testing
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("ListTasks", mock.Anything).Return(taskList, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	// Assertions
 	if assert.NoError(t, h.GetTaskList(c)) {
@@ -443,7 +452,7 @@ func TestUpdateTaskShould200OK(t *testing.T) {
 
 	mr.On("GetTaskById", mock.Anything).Return(mockedTask, nil)
 	mr.On("UpdateTask", updatedMockedTask.Id, mock.Anything).Return(updatedMockedTask, nil)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	u, err = json.Marshal(updatedMockedTask.ToResponse())
 	assert.Nil(t, err)
@@ -476,7 +485,7 @@ func TestUpdateTaskShould404NotFoundWhenTaskDoesNotExist(t *testing.T) {
 	mr := mockRepo{}
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
 	mr.On("GetTaskById", mock.Anything).Return(models.Task{}, gorm.ErrRecordNotFound)
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	// Assertions
 	if assert.NoError(t, h.UpdateTask(c)) {
@@ -504,7 +513,7 @@ func TestDeleteTaskShould204NoContent(t *testing.T) {
 	mr.On("GetTaskById", mock.Anything).Return(mockedTask, nil)
 	mr.On("DeleteTask", mock.Anything).Return(nil)
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	// Assertions
 	if assert.NoError(t, h.DeleteTask(c)) {
@@ -531,7 +540,7 @@ func TestDeleteTenantShouldReturn404NotFoundWhenItDoesntExist(t *testing.T) {
 	mr.On("GetTaskById", mock.Anything).Return(models.Task{}, gorm.ErrRecordNotFound)
 	mr.On("DeleteTask", mock.Anything).Return(nil)
 	ce := encryption.NewCryptoEngine("Qp7LtWv8X4xEHk8OLidUOCUHURPaBmPk")
-	h := NewTasksHandler(&mr, ce, nil)
+	h := NewTasksHandler(&mr, ce, createRedisClient())
 
 	// Assertions
 	if assert.NoError(t, h.DeleteTask(c)) {
