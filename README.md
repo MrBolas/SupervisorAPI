@@ -6,6 +6,7 @@ Task managing API for managers and technicians
 ## Contents     
 
 - [What is Supervisor API](#what-is-supervisor-api) 
+    - [Architecture](#architecture) 
     - [Summary](#summary) 
     - [Features](#features) 
 - [Instructions](#instructions) 
@@ -29,9 +30,17 @@ Task managing API for managers and technicians
         - [Setting Up K8s Environment](#setting-up-local-environment) 
         - [Run K8s](#run-k8s) 
 - [Available Endpoints](#available-endpoints) 
+    - [Endpoint contract](#endpoint-contract) 
+    - [Get Task By ID](#get-task-by-id) 
+    - [Get Task List](#get-task-list) 
+    - [Create Task](#create-task) 
+    - [Update Task](#update-task) 
+    - [Delete Task](#delete-task) 
 - [Testing and Coverage](#testing-and-coverage)
 
 # What is Supervisor API
+## Architecture
+![supervisorapi architecture](docs/SupervisorAPI_architecture.excalidraw.png)
 ## Summary
 Supervisor API is an API that allows CRUD operations on Tasks. This API leverages role based credentials configured and managed in an external Oauth2 authentication service has access permissions.
 Existing roles and allowed actions are differentiated by access control:
@@ -45,7 +54,10 @@ Existing roles and allowed actions are differentiated by access control:
     - Update own tasks
     - Fetch own task by task identifier
     - List own tasks by query parameters
-Newly created tasks send an event to a Redis Queue.
+
+Available endpoints are show on this document [api endpoint section](#available-endpoints). All endpoints have a CRUD interaction with the MySQL database, but the endpoint responsible by creating a new task also adds an event to the Redis queue (if available).
+There is no subscriber service to the queue, so in order to monitor queue activity, depending on the environment I suggest using the redis-cli in the redis [development Docker container](#monitor-development-redis) container or redis [Docker Compose container](#monitor-docker-compose-redis).
+
 ## Features
     [x] Task summary is constraint to 2500 characters
     [x] Task summary is encrypted on database
@@ -67,13 +79,15 @@ This API uses Auth0, an external authentication service. For testing porpuses, f
 ## Auth2 Client Configuration
 Any http client used with this service should use a "Resource Owner Password Credentials" Grant type with the following configurations:
 
-| Configuration    | Value (for default Auth0 integration)          |
-| -----------------|----------------------------------------        |
-| Username         | [User email](#auth0-integration)               |
-| Password         | [Password](#auth0-integration)                 |
-| Access Token Url | https://dev-04detuv7.us.auth0.com/oauth/token  |
+| Configuration    | Value (for default Auth0 integration)                      |
+| -----------------|------------------------------------------------------------|
+| Username         | [User email](#auth0-integration)                           |
+| Password         | [Password](#auth0-integration)                             |
+| Access Token Url | https://dev-04detuv7.us.auth0.com/oauth/token              |
 | Client ID        | [AUTH0_CLIENT_ID](#project-environment-variables)          |
 | Client Secret    | [AUTH0_CLIENT_SECRET](#project-environment-variables)      |
+| Scope            | openid profile email                                       |
+| Audience         | https://dev-04detuv7.us.auth0.com/api/v2/                  |
 
 To falicitate the usage of this API a export of Insomnia endpoints configuration is provided in the [project](https://github.com/MrBolas/SupervisorAPI/blob/6fedd7cbca98cb253a2227fadd771300d221ff37/InsomniaExport/Insomnia_export.json).
 ## Development Environment
@@ -129,6 +143,7 @@ go build
 ```shell
 ./SupervisorAPI
 ```
+The SupervisorAPI configured port is 8080.
 ### Monitor Development Redis
 To validate incoming notifications we can use:
 ```shell
@@ -206,6 +221,7 @@ volumes:
 ```shell
 docker-compose up
 ```
+The SupervisorAPI exposed configured port is 8080.
 ### Monitor Docker Compose Redis
 To validate incoming notifications we can use:
 ```shell
@@ -236,7 +252,141 @@ kubectl create configmap env-docker --from-env-file=.env-docker
 ```
 
 # Available Endpoints
-The Supervisor API endpoints are depicted in the [contract.yml](https://github.com/MrBolas/SupervisorAPI/blob/ff4b37cc7577d9ec53ebc16418fd724a269fb371/docs/contract.yml) and can be conveniently formated into html in [swagger](https://editor.swagger.io/).
+## Endpoint contract
+The Supervisor API endpoints are depicted in the [contract.yml](https://github.com/MrBolas/SupervisorAPI/blob/ff4b37cc7577d9ec53ebc16418fd724a269fb371/docs/contract.yml) according to the standard OpenApi and can be conveniently formated into html in [swagger](https://editor.swagger.io/).
+
+## Get Task By ID
+Fetches the Task with ID sent as Path parameter.
+- Access:
+    - Manager:
+    - Technician: Can only access own tasks
+- Verb: Get
+- Parameters
+    - id: /v1/tasks/{task-id}
+        - format: uuid
+- Responses:
+    - 200:
+        - body:
+            ```json
+            {
+            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "worker_name": "string",
+            "summary": "string",
+            "date": "string"
+            }
+            ``` 
+    - 401:
+    - 404:
+
+## Get Task List
+Fetches list of Tasks filtered by query parameters.
+- Access:
+    - Manager:
+    - Technician: Can only access own tasks
+- Verb: Get
+- Parameters
+    - worker_name: /v1/tasks?worker_name={worker_name}
+    - before: /v1/tasks?before={before_date}
+        - format: "2022-05-23 15:33:01"
+    - after: /v1/tasks?after={after_date}
+        - format: "2022-05-23 15:33:01"
+    - page: /v1/tasks?page={page_number}
+    - page_size: /v1/tasks?page_size={page_size_number}
+    - sort_by: /v1/tasks?sort_by={sort_field}
+    - sort_order: /v1/tasks?sort_order={sort_order}
+    
+- Responses:
+    - 200:
+        - body:
+            ```json
+            {
+            "data": [
+                {
+                "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "worker_name": "string",
+                "summary": "string",
+                "date": "string"
+                }
+            ],
+            "metadata": {
+                "page": 0,
+                "page_size": 0
+            }
+            }
+            ``` 
+    - 401:
+    - 404:
+## Create Task
+Creates a new Task and sends an event to queue.
+- Access:
+    - Manager:
+    - Technician:
+- Verb: Post
+- Body:
+    ```json
+    {
+    "summary": "string",
+    "date": "string"
+    }
+    ```
+- Responses:
+    - 201:
+        - body:
+            ```json
+            {
+            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "worker_name": "string",
+            "summary": "string",
+            "date": "string"
+            }
+            ``` 
+    - 400:
+    - 401:
+    - 409:
+## Update Task
+Updates a Task by Id.
+- Access:
+    - Manager:
+    - Technician: Can only access own tasks
+- Verb: Put
+- Parameters
+    - id: /v1/tasks/{task-id}
+        - format: uuid
+- Body:
+    ```json
+    {
+    "summary": "string",
+    "date": "string"
+    }
+    ```
+- Responses:
+    - 200:
+        - body:
+            ```json
+            {
+            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "worker_name": "string",
+            "summary": "string",
+            "date": "string"
+            }
+            ``` 
+    - 400:
+    - 401:
+    - 404:
+    - 409:
+## Delete Task
+Deletes a Task.
+- Access:
+    - Manager:
+- Verb: Delete
+- Parameters
+    - id: /v1/tasks/{task-id}
+        - format: uuid
+- Responses:
+    - 204:
+    - 401:
+    - 404:
+    - 409:
 
 # Testing and Coverage
 This code repository test coverage for the api codebase. There are several unit tests covering the code base. Additionaly there are integration tests for the MySql Database using [Dockertest](https://github.com/ory/dockertest) and [Testify](github.com/stretchr/testify).
