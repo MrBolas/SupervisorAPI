@@ -46,7 +46,7 @@ Existing roles and allowed actions are differentiated by access control:
     - Fetch own task by task identifier
     - List own tasks by query parameters
 Newly created tasks send an event to a Redis Queue.
-    ## Features
+## Features
     [x] Task summary is constraint to 2500 characters
     [x] Task summary is encrypted on database
     [x] Task List endpoints query by "worker_name"
