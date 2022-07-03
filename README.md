@@ -89,7 +89,7 @@ Any http client used with this service should use a "Resource Owner Password Cre
 | Scope            | openid profile email                                       |
 | Audience         | https://dev-04detuv7.us.auth0.com/api/v2/                  |
 
-To falicitate the usage of this API a export of Insomnia endpoints configuration is provided in the [project](https://github.com/MrBolas/SupervisorAPI/blob/6fedd7cbca98cb253a2227fadd771300d221ff37/InsomniaExport/Insomnia_export.json).
+To facilitate the usage of this API an export of Insomnia endpoints configuration is provided in the [project](https://github.com/MrBolas/SupervisorAPI/blob/6fedd7cbca98cb253a2227fadd771300d221ff37/InsomniaExport/Insomnia_export.json).
 ## Development Environment
 ### Development Requirements
 1. Docker Destop running
@@ -120,7 +120,7 @@ Default environment variables are defined in the [.env](https://github.com/MrBol
 ```
 2. Launch Redis docker container
 ```shell
-docker run --name some-redis -d redis
+docker run -p 6379:6379 --name queue -d redis
 ```
 ## Run project
 1. Git clone
@@ -147,9 +147,9 @@ The SupervisorAPI configured port is 8080.
 ### Monitor Development Redis
 To validate incoming notifications we can use:
 ```shell
-docker exec -it some-redis redis-cli -h localhost subscribe notifications
+docker exec -it queue redis-cli -h localhost subscribe notifications
 ```
-This command subscribes to the topic notifications in redis-cli inside the docker container some-redis, and will show received messages received for that topic.
+This command subscribes to the topic notifications in redis-cli inside the docker container queue, and will show received messages received for that topic.
 ## Docker Compose Environment
 ### Docker Compose Requirements
 1. Docker Destop running
@@ -227,7 +227,7 @@ To validate incoming notifications we can use:
 ```shell
 docker exec -it supervisorapi_queue_1 redis-cli -h localhost subscribe notifications
 ```
-This command subscribes to the topic notifications in redis-cli inside the docker container some-redis, and will show received messages received for that topic.
+This command subscribes to the topic notifications in redis-cli inside the docker container supervisorapi_queue_1, and will show received messages received for that topic.
 ## K8s Environment
 
 ### K8s Requirements
