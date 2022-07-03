@@ -72,8 +72,8 @@ Any http client used with this service should use a "Resource Owner Password Cre
 | Username         | [User email](#auth0-integration)               |
 | Password         | [Password](#auth0-integration)                 |
 | Access Token Url | https://dev-04detuv7.us.auth0.com/oauth/token  |
-| Client ID        | [AUTH0_CLIENT_ID](#auth0-integration)          |
-| Client Secret    | [AUTH0_CLIENT_SECRET](#auth0-integration)      |
+| Client ID        | [AUTH0_CLIENT_ID](#project-environment-variables)          |
+| Client Secret    | [AUTH0_CLIENT_SECRET](#project-environment-variables)      |
 
 To falicitate the usage of this API a export of Insomnia endpoints configuration is provided in the [project](https://github.com/MrBolas/SupervisorAPI/blob/6fedd7cbca98cb253a2227fadd771300d221ff37/InsomniaExport/Insomnia_export.json).
 ## Development Environment
